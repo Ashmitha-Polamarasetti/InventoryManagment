@@ -23,6 +23,135 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Aggregated data for login/demo
+app.post('/api/login', async (req, res) => {
+  try {
+    const { email } = req.body || {};
+
+    // fetch from DB
+    const [settings] = await db('settings').select('*').limit(1);
+    const users = await db('users').select('*').orderBy('created_at', 'desc');
+    const products = await db('products').select('*').orderBy('created_at', 'desc');
+    const expenses = await db('expenses').select('*').orderBy('date', 'desc');
+
+    // choose user if exists, else dummy
+    let user = users.find(u => u.email === email);
+
+    // If DB empty, provide dummy data for demo
+    const useDummy = (!users.length && !products.length && !expenses.length);
+
+    const dummyUsers = [
+      { id: 1, name: 'Alice Admin', role: 'admin', email: 'alice@example.com', status: 'active' },
+      { id: 2, name: 'Bob Staff', role: 'staff', email: 'bob@example.com', status: 'active' },
+      { id: 3, name: 'Carol Manager', role: 'manager', email: 'carol@example.com', status: 'active' }
+    ];
+    const dummyProducts = [
+      { id: 1, name: 'Laptop Pro 14"', sku: 'LP14-PRO', category: 'Computers', quantity: 12, supplier: 'TechSupply', purchase_price: 900, sale_price: 1299, status: 'active', low_stock_threshold: 5 },
+      { id: 2, name: 'Wireless Mouse', sku: 'WM-200', category: 'Accessories', quantity: 85, supplier: 'GadgetHub', purchase_price: 10, sale_price: 24.99, status: 'active', low_stock_threshold: 20 },
+      { id: 3, name: 'USB-C Hub', sku: 'HUB-7IN1', category: 'Accessories', quantity: 34, supplier: 'GadgetHub', purchase_price: 18, sale_price: 39.99, status: 'active', low_stock_threshold: 10 }
+    ];
+    const dummyExpenses = [
+      { id: 1, date: '2025-09-01', category: 'Rent', amount: 1500.00, description: 'Warehouse rent' },
+      { id: 2, date: '2025-09-10', category: 'Utilities', amount: 220.40, description: 'Electricity and water' },
+      { id: 3, date: '2025-09-15', category: 'Supplies', amount: 310.75, description: 'Packing materials' }
+    ];
+    const dummySettings = { id: 1, company_name: 'Acme Retail', currency: 'USD', timezone: 'UTC', default_low_stock_threshold: 10 };
+
+    const respUsers = useDummy ? dummyUsers : users;
+    const respProducts = useDummy ? dummyProducts : products;
+    const respExpenses = useDummy ? dummyExpenses : expenses;
+    const respSettings = useDummy ? dummySettings : settings;
+
+    if (!user) {
+      user = (useDummy ? respUsers.find(u => u.email === (email || 'alice@example.com')) : users[0]) || respUsers[0];
+    }
+
+    // Simple relationship: assign products to users in a round-robin for demo
+    const productAssignments = respProducts.map((p, idx) => ({
+      product_id: p.id,
+      user_id: respUsers[(idx % respUsers.length)].id
+    }));
+
+    res.json({
+      status: 'logged_in',
+      user,
+      users: respUsers,
+      products: respProducts,
+      expenses: respExpenses,
+      settings: respSettings || null,
+      relationships: { productAssignments }
+    });
+  } catch (e) {
+    // On error, still return dummy data for demo
+    const users = [
+      { id: 1, name: 'Alice Admin', role: 'admin', email: 'alice@example.com', status: 'active' },
+      { id: 2, name: 'Bob Staff', role: 'staff', email: 'bob@example.com', status: 'active' }
+    ];
+    const products = [
+      { id: 1, name: 'Laptop', sku: 'LAP-001', category: 'Computers', quantity: 10, supplier: 'TechSupply', purchase_price: 800, sale_price: 1199, status: 'active', low_stock_threshold: 5 },
+      { id: 2, name: 'Mouse', sku: 'MSE-010', category: 'Accessories', quantity: 60, supplier: 'GadgetHub', purchase_price: 8, sale_price: 19.99, status: 'active', low_stock_threshold: 20 }
+    ];
+    const expenses = [
+      { id: 1, date: '2025-09-01', category: 'Rent', amount: 1200, description: 'Office rent' },
+      { id: 2, date: '2025-09-10', category: 'Supplies', amount: 200, description: 'Stationery' }
+    ];
+    const settings = { id: 1, company_name: 'Demo Co', currency: 'USD', timezone: 'UTC', default_low_stock_threshold: 10 };
+    const productAssignments = products.map((p, i) => ({ product_id: p.id, user_id: users[i % users.length].id }));
+    res.json({ status: 'logged_in', user: users[0], users, products, expenses, settings, relationships: { productAssignments } });
+  }
+});
+
+// Aggregated data anytime
+app.get('/api/data', async (_req, res) => {
+  try {
+    const [settings] = await db('settings').select('*').limit(1);
+    const users = await db('users').select('*').orderBy('created_at', 'desc');
+    const products = await db('products').select('*').orderBy('created_at', 'desc');
+    const expenses = await db('expenses').select('*').orderBy('date', 'desc');
+
+    const useDummy = (!users.length && !products.length && !expenses.length);
+
+    const dummyUsers = [
+      { id: 1, name: 'Alice Admin', role: 'admin', email: 'alice@example.com', status: 'active' },
+      { id: 2, name: 'Bob Staff', role: 'staff', email: 'bob@example.com', status: 'active' }
+    ];
+    const dummyProducts = [
+      { id: 1, name: 'Laptop', sku: 'LAP-001', category: 'Computers', quantity: 10, supplier: 'TechSupply', purchase_price: 800, sale_price: 1199, status: 'active', low_stock_threshold: 5 },
+      { id: 2, name: 'Mouse', sku: 'MSE-010', category: 'Accessories', quantity: 60, supplier: 'GadgetHub', purchase_price: 8, sale_price: 19.99, status: 'active', low_stock_threshold: 20 }
+    ];
+    const dummyExpenses = [
+      { id: 1, date: '2025-09-01', category: 'Rent', amount: 1200, description: 'Office rent' },
+      { id: 2, date: '2025-09-10', category: 'Supplies', amount: 200, description: 'Stationery' }
+    ];
+    const dummySettings = { id: 1, company_name: 'Demo Co', currency: 'USD', timezone: 'UTC', default_low_stock_threshold: 10 };
+
+    const respUsers = useDummy ? dummyUsers : users;
+    const respProducts = useDummy ? dummyProducts : products;
+    const respExpenses = useDummy ? dummyExpenses : expenses;
+    const respSettings = useDummy ? dummySettings : settings;
+
+    const productAssignments = respProducts.map((p, i) => ({ product_id: p.id, user_id: respUsers[i % respUsers.length].id }));
+
+    res.json({ users: respUsers, products: respProducts, expenses: respExpenses, settings: respSettings || null, relationships: { productAssignments } });
+  } catch (_e) {
+    const users = [
+      { id: 1, name: 'Alice Admin', role: 'admin', email: 'alice@example.com', status: 'active' },
+      { id: 2, name: 'Bob Staff', role: 'staff', email: 'bob@example.com', status: 'active' }
+    ];
+    const products = [
+      { id: 1, name: 'Laptop', sku: 'LAP-001', category: 'Computers', quantity: 10, supplier: 'TechSupply', purchase_price: 800, sale_price: 1199, status: 'active', low_stock_threshold: 5 },
+      { id: 2, name: 'Mouse', sku: 'MSE-010', category: 'Accessories', quantity: 60, supplier: 'GadgetHub', purchase_price: 8, sale_price: 19.99, status: 'active', low_stock_threshold: 20 }
+    ];
+    const expenses = [
+      { id: 1, date: '2025-09-01', category: 'Rent', amount: 1200, description: 'Office rent' },
+      { id: 2, date: '2025-09-10', category: 'Supplies', amount: 200, description: 'Stationery' }
+    ];
+    const settings = { id: 1, company_name: 'Demo Co', currency: 'USD', timezone: 'UTC', default_low_stock_threshold: 10 };
+    const productAssignments = products.map((p, i) => ({ product_id: p.id, user_id: users[i % users.length].id }));
+    res.json({ users, products, expenses, settings, relationships: { productAssignments } });
+  }
+});
+
 // Products CRUD
 app.get('/api/products', async (req, res) => {
   try {

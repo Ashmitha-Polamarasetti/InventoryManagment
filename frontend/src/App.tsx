@@ -5,6 +5,7 @@ import Inventory from './pages/Inventory';
 import Users from './pages/Users';
 import Settings from './pages/Settings';
 import Expenses from './pages/Expenses';
+import DataViewer from './pages/DataViewer';
 
 function Navbar({ onToggleTheme }: { onToggleTheme: () => void }) {
   const location = useLocation();
@@ -33,6 +34,7 @@ function Sidebar() {
         <NavLink to="/users" className={linkClass}>👥 Users</NavLink>
         <NavLink to="/expenses" className={linkClass}>💳 Expenses</NavLink>
         <NavLink to="/settings" className={linkClass}>⚙️ Settings</NavLink>
+        <NavLink to="/data" className={linkClass}>🧪 Data Viewer</NavLink>
       </nav>
     </div>
   );
@@ -58,6 +60,7 @@ export default function App() {
             <Route path="/users" element={<Users />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/expenses" element={<Expenses />} />
+            <Route path="/data" element={<DataViewer />} />
           </Routes>
         </main>
       </div>
