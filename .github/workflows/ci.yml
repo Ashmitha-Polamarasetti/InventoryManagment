@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Backend - install
+        working-directory: backend
+        run: |
+          npm ci
+
+      - name: Frontend - install and build
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Docker build services
+        run: |
+          docker build -t ims-backend ./backend
+          docker build -t ims-frontend ./frontend
+
+

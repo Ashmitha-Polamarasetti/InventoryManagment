@@ -1,0 +1,28 @@
+{
+  "name": "ims-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "migrate": "knex migrate:latest",
+    "seed": "knex seed:run"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "helmet": "^7.1.0",
+    "knex": "^3.1.0",
+    "sqlite3": "^5.1.7",
+    "multer": "^1.4.5-lts.1",
+    "xlsx": "^0.18.5",
+    "pdfkit": "^0.14.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
+
+
