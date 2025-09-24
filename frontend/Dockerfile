@@ -1,9 +1,26 @@
+# Use Node 20 Alpine image for small size
 FROM node:20-alpine
+
+# Set working directory inside container
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci || npm install
+
+# Copy package.json and package-lock.json first
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the source code
 COPY . .
-EXPOSE 5173
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 
+# Build the React app
+RUN npm run build
 
+# Install serve to serve the build folder
+RUN npm install -g serve
+
+# Expose port 3000 for frontend
+EXPOSE 3000
+
+# Start the app
+CMD ["serve", "-s", "build", "-l", "3000"]

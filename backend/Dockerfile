@@ -1,9 +1,17 @@
-FROM node:20-alpine
+# Use OpenJDK 17 base image
+FROM openjdk:17-jdk-slim
+
+# Set working directory inside container
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci || npm install
-COPY . .
-EXPOSE 4000
-CMD ["npm", "run", "dev"]
+
+# Copy the jar file into the container
+COPY target/backend.jar backend.jar
+
+# Expose the port your backend uses
+EXPOSE 8080
+
+# Command to run the app
+ENTRYPOINT ["java", "-jar", "backend.jar"]
+
 
 
