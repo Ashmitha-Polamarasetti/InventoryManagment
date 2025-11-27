@@ -1,0 +1,75 @@
+---
+- name: Deploy Inventory Management Application
+  hosts: all
+  become: yes
+
+  vars:
+    repo_url: "https://github.com/Ashmitha-Polamarasetti/InventoryManagment.git"
+    app_dir: "/opt/inventory-app"
+    node_version: "18.x"
+
+  tasks:
+
+    - name: Install curl
+      apt:
+        name: curl
+        state: present
+        update_cache: yes
+
+    - name: Add NodeSource repo (Node.js 18)
+      shell: |
+        curl -fsSL https://deb.nodesource.com/setup_{{ node_version }} | sudo -E bash -
+      args:
+        warn: false
+
+    - name: Install Node.js and npm
+      apt:
+        name: nodejs
+        state: present
+        update_cache: yes
+
+    - name: Ensure git is installed
+      apt:
+        name: git
+        state: present
+
+    - name: Clone or update application
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        force: yes
+        version: main
+
+    - name: Install backend dependencies
+      shell: npm install
+      args:
+        chdir: "{{ app_dir }}/backend"
+
+    - name: Run database migrations
+      shell: npm run migrate
+      args:
+        chdir: "{{ app_dir }}/backend"
+
+    - name: Install frontend dependencies
+      shell: npm install
+      args:
+        chdir: "{{ app_dir }}/frontend"
+
+    - name: Build frontend
+      shell: npm run build
+      args:
+        chdir: "{{ app_dir }}/frontend"
+      npm:
+        name: pm2
+        global: yes
+    - name: Start backend using PM2
+      args:
+        chdir: "{{ app_dir }}/backend"
+    - name: Save PM2 startup config
+      shell: pm2 save
+
+    - name: Enable PM2 on startup
+      shell: pm2 startup systemd -u {{ ansible_user }}
+      shell: pm2 start server.js --name inventory-backend
+
+
